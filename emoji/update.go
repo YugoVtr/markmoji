@@ -1,6 +1,7 @@
 package emoji
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,35 +9,36 @@ import (
 	"regexp"
 )
 
-type EmojiList map[string]string
+type List map[string]string
 
-func update() {
+func Update(out io.Writer) {
 	const url = `https://api.github.com/emojis`
 	c := http.Client{}
-	r, _ := http.NewRequest("GET", url, nil)
+	r, _ := http.NewRequestWithContext(context.Background(), "GET", url, http.NoBody)
 	r.Header.Add("Accept", "application/vnd.github.v3+json")
-	response, _ := c.Do(r)
+	response, err := c.Do(r)
+	if err != nil {
+		panic(err)
+	}
+
+	defer response.Body.Close()
 	content, _ := io.ReadAll(response.Body)
 
-	e := EmojiList{}
-	json.Unmarshal(content, &e)
+	e := List{}
+	_ = json.Unmarshal(content, &e)
 
-	const findEmojiCodeRegex = `(unicode\/)(.*?)((\.png)|(-))`
-	rgx, err := regexp.Compile(findEmojiCodeRegex)
-
-	if err != nil {
-		panic("regex fail " + err.Error())
-	}
+	const findEmojiCodeRegex = `(unicode/)(.*?)((\.png)|(-))`
+	rgx := regexp.MustCompile(findEmojiCodeRegex)
 
 	l := emojiIndexed{}
 	for name, url := range e {
 		strNum := rgx.Find([]byte(url))
-		strNum = regexp.MustCompile(`(unicode\/)|(\.png)|(-)`).ReplaceAll(strNum, []byte{})
+		strNum = regexp.MustCompile(`(unicode/)|(\.png)|(-)`).ReplaceAll(strNum, []byte{})
 
 		o := Emoji{IconURL: url}
 		fmt.Sscanf(string(strNum), "%x", &o.Code)
 		l[name] = o
 	}
 
-	fmt.Printf("%#v", l)
+	fmt.Fprintf(out, "%s", l)
 }

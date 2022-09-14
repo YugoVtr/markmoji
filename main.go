@@ -5,26 +5,51 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
+
+	"flag"
 
 	"github.com/yugovtr/markmoji/emoji"
 )
 
-func main() {
-	var input []byte
-	var err error
-	args := os.Args[1:]
+func read(in chan []byte) {
+	input, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		panic(err)
+	}
+	in <- input
+}
 
+func main() {
+	var l = flag.Bool("l", false, "list all emoji")
+	flag.Parse()
+
+	if *l {
+		emoji.Update(os.Stdout)
+		return
+	}
+
+	var (
+		input  []byte
+		timout time.Duration = 50
+	)
+
+	args := os.Args[1:]
 	input = []byte(strings.Join(args, "\n"))
 
 	if len(input) == 0 {
-		input, err = io.ReadAll(os.Stdin)
-		if err != nil {
-			panic(err)
+		in := make(chan []byte, 1)
+		go read(in)
+
+		select {
+		case i := <-in:
+			input = i
+		case <-time.After(timout * time.Millisecond):
+			return
 		}
 	}
 
-	var output string = string(input)
-
+	output := string(input)
 	for name, emoji := range emoji.Emojis {
 		rgx := fmt.Sprintf(":%s:", name)
 		output = strings.ReplaceAll(output, rgx, string(emoji.Code))
