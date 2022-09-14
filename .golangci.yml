@@ -19,9 +19,6 @@ linters-settings:
       - opinionated
       - performance
       - style
-  govet:
-    disable:
-      - stringintconv
 
 run:
   timeout: "1m"

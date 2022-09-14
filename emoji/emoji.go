@@ -3,12 +3,13 @@ package emoji
 import "fmt"
 
 type Emoji struct {
-	IconURL string
-	Code    int
+	IconURL  string
+	Code     int
+	Unicodes []rune
 }
 
 func (e Emoji) String() string {
-	return fmt.Sprintf("%s\t%s", string(e.Code), e.IconURL)
+	return fmt.Sprintf("%s\t%s", string(e.Unicodes), e.IconURL)
 }
 
 const BaseURL = "https://github.githubassets.com/images/icons/emoji/unicode"
