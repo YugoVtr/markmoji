@@ -30,8 +30,8 @@ func main() {
 	}
 
 	var (
-		input  []byte
-		timout time.Duration = 50
+		input   []byte
+		timeout time.Duration = 50
 	)
 
 	args := os.Args[1:]
@@ -44,7 +44,7 @@ func main() {
 		select {
 		case i := <-in:
 			input = i
-		case <-time.After(timout * time.Millisecond):
+		case <-time.After(timeout * time.Millisecond):
 			return
 		}
 	}
